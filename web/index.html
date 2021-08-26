@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>视频流在线识别</title>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<meta name="format-detection" content="telephone=no">
+    <meta name="renderer" content="webkit">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+    	<style>
+    		body{margin: 0;padding: 0;}
+        canvas,img{width: 1024px;height: 768px;}
+    	</style>
+	</head>
+	<body>
+    <h2>视频流在线识别</h2>
+		<canvas id="stream" width="640" height="480"></canvas>
+    <h2 id="warns"></h2>
+	</body>
+	<script type="text/javascript">
+    // url query参数
+    let ws = function() {
+      // 参数
+      this.data = {
+        url: null,
+        index: null,
+        status: 0
+      }
+
+      // 存储最大为25帧
+      this.max = 25;
+      // 队列
+      this.queue = new Array();
+
+      // socker 
+      this.socket = null;
+
+      // timer
+      this.timer = null;
+
+      // canvas
+      let cv = document.querySelector('#stream')
+      this.ctx = cv.getContext('2d');
+
+      let warnText = document.querySelector('#warns')
+
+      // img
+      this.img = new Image();
+      // this.img = document.querySelector('img');
+
+      // 入栈
+      this.push = (data) => {
+        // 如果已经超出，则丢弃
+        if (this.queue.length >= this.max) {
+          this.queue.shift();
+          console.log('已移除第一个')
+        }
+
+        // 末尾添加
+        this.queue.push(data);
+
+      }
+
+      // 出栈
+      this.out = () => {
+        if (this.queue.length === 0) {
+          return null
+        }
+        return this.queue.shift();
+      }
+
+      // 动态渲染
+      this.render = () => {
+        this.timer = setTimeout(() => {
+          clearTimeout(this.timer)
+          let item = this.out();
+          if (item) {
+            let reader = new FileReader();
+            reader.onload = () => {
+              this.img.src = reader.result;
+              reader = null;
+            };
+            reader.readAsBinaryString(item);
+          }else {
+            this.render()
+          }
+          
+        }, 20);
+        
+      }
+
+      // 图片加载
+      this.img.onload = () => {
+        this.ctx.clearRect(0, 0, cv.width, cv.height);
+        this.ctx.drawImage(this.img,0,0, cv.width, cv.height);
+        this.render();
+      };
+
+      // 获取url参数
+      this.query = (name) => {
+        let reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+        let r = window.location.search.substr(1).match(reg);
+        if(r != null)
+          return  unescape(decodeURI(r[2])); 
+        return null;
+      }
+
+      // 发送消息
+      this.send = (content) => {
+        if (this.socket) {
+          let json = {
+            index: this.data.index,
+            content: content
+          }
+          let jsonStr = JSON.stringify(json)
+          this.socket.send(jsonStr);
+        }
+      }
+
+      // 渲染识别结果
+      this.renderText = (data) => {
+        if (!data) return
+        let texts = ''
+        data.forEach(item => {
+          texts += item.label+'：' + item.warn + "  "
+        });
+        warnText.innerHTML = texts
+      }
+
+      // 初始化
+      this.init = () => {
+        this.data.index = this.query('index');
+        this.data.url = this.query('url');
+        if (!this.data.index || !this.data.url) {
+          return
+        }
+
+        if (window["WebSocket"]) {
+          this.socket = new WebSocket("ws://127.0.0.1:8068/execstream?index="+this.data.index+"&url=" + this.data.url)
+          //this.socket.binaryType = 'Blob';
+          // 连接socket
+          this.socket.onopen = (e) => {
+            this.send("连接服务端获取视频流"); 
+          }
+
+          // 接收消息
+          this.socket.onmessage = (e) => {
+            if (Object.prototype.toString.call(e.data) === '[object String]') {
+              let d= JSON.parse(e.data)
+              if (d.status === 1){
+                this.renderText(d.content)
+              }else{
+                console.log(d.content)
+              }
+            }else if (Object.prototype.toString.call(e.data) === '[object Blob]'){
+              this.push(e.data);
+            }else{
+              console.log('不支持的类型',e.data)
+            }
+            
+          }
+
+          // socket被关闭
+          this.socket.onclose = (e) => {
+            if (e.wasClean) {
+              console.log("服务端已关闭", e.code, e.reason)
+            } else {
+              console.log("网络被中断...")
+            }
+          }
+
+          // socket遇到错误
+          this.socket.onerror = (e) => {
+            console.log("socket遇到错误", e.message)
+          }
+          this.render()
+        }
+        
+      }
+
+    }
+
+    let wsObj = new ws();
+
+    wsObj.init()
+  </script>
+</html>

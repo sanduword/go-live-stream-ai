@@ -1,0 +1,39 @@
+
+server:
+  # web端口
+  port: 8068
+  # 运行模式 debug  release
+  mode: "release"
+  # 最多可以实时识别多少个视频流
+  maxAi: 3
+  # 日志存储目录
+  logpath: D:/goland/project/src/live-stream-ai/logs
+  # yolo存放目录
+  yolopath: G:/goland/project/src/live-stream-ai/yolov4
+  # 识别图片服务器存储目录
+  pathimg: D:/goland/project/src/live-stream-ai/liveimages
+  # 识别图片http访问地址
+  httpimg: http://127.0.0.1:1688/liveimages
+  # 置信度
+  score: 0.3
+  # 非极大值抑制
+  nms: 0.35
+
+db:
+  sqlite:
+    conn: 
+
+redis:
+  addr: "127.0.0.1:6379"
+  db: 6
+  # redis 前缀
+  rdprefix: "STREM"
+  # redis 存储时长  分钟
+  rdexpire: 60
+  maxidle: 10
+  maxactive: 10
+  dialTimeout: "1s"
+  idleTimeout: "10s"
+  readTimeout: "500ms"
+  writeTimeout: "1s"
+  

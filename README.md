@@ -1,4 +1,4 @@
-# 基于 GoLand + Gin + Logrus+ OpenCv 4 + WebSocket + YoloV4 + Vue 3
+# 基于 Goland + Gin + Logrus+ OpenCv 4 + WebSocket + YoloV4 + Vue 3
 
 目前市面上AI在Go中的应用和相关使用较少，Go这门语言是我比较喜欢的；另外就是自己在AI部门从事多年该项工作，但是没有接触这块比较具体的工作，还有比较重要的一点就是为了简化AI识别这块的使用，所以就想自己动手尝试一下。本系统支持直播流（RTSP、RTMP、FLV、HLS） 在线场景智能识别，通过WebSocket的交互方式，跟Web端进行实时关键帧和识别结果的传输。目前AI识别这块使用的是YoloV4开源模型，在很多特定场景下会出现误识别的情况，如何提高识别率这是后续的问题了，本系统仅供参考学习使用。
 
